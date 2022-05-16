@@ -1,0 +1,2 @@
+class PostDeployConfigurationError(Exception):
+    pass
