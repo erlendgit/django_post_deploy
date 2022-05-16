@@ -1,22 +1,13 @@
-from celery import Celery
 from django.conf import settings
+from django.utils.module_loading import import_string
 
-from post_deploy.errors import PostDeployConfigurationError
 from post_deploy.models import PostDeployAction
-from post_deploy.utils import register_post_deploy
-
-
-def get_celery_app():
-    try:
-        app = __import__(settings.POST_DEPLOY_CELERY_APP).celery_app
-        if not isinstance(app, Celery):
-            raise PostDeployConfigurationError(f"{settings.POST_DEPLOY_CELERY_APP} is not a valid Celery app.")
-        return app
-    except AttributeError:
-        raise PostDeployConfigurationError("Put the module where 'celery_app' can be found in POST_DEPLOY_CELERY at your project settings.")
+from post_deploy.plugins.context import DefaultContext
+from post_deploy.plugins.scheduler import DefaultScheduler
 
 
 def initialize_commands():
+    from post_deploy.utils import register_post_deploy
     action_list = {}
 
     for app in settings.INSTALLED_APPS:
@@ -40,3 +31,13 @@ def initialize_commands():
             action.save()
 
     return action_list
+
+
+def get_context_manager(context_parameters) -> DefaultContext:
+    Manager = import_string(getattr(settings, 'POST_DEPLOY_CONTEXT_MANAGER', 'post_deploy.plugins.context.DefaultContext'))
+    return Manager(context_parameters)
+
+
+def get_scheduler_manager() -> DefaultScheduler:
+    Manager = import_string(getattr(settings, 'POST_DEPLOY_SCHEDULER_MANAGER', 'post_deploy.plugins.scheduler.DefaultScheduler'))
+    return Manager()
