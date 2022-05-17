@@ -4,7 +4,7 @@ from inspect import isfunction
 
 from django.utils import timezone
 
-from post_deploy.local_utils import initialize_commands
+from post_deploy.local_utils import initialize_actions
 from post_deploy.models import PostDeployAction
 
 
@@ -38,7 +38,7 @@ class PostDeployActionBase(ABC):
 
 
 def run_deploy_action(action_ids):
-    initialize_commands()
+    initialize_actions()
     for id in action_ids:
         action = PostDeployAction.objects.get(id=id)
         config = register_post_deploy.class_repository.get(id)

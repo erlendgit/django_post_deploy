@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 
 from post_deploy.models import PostDeployAction
-from post_deploy.local_utils import initialize_commands, get_context_manager, get_scheduler_manager
+from post_deploy.local_utils import initialize_actions, get_context_manager, get_scheduler_manager
 
 
 class Command(BaseCommand):
@@ -34,29 +34,26 @@ class Command(BaseCommand):
                 self.stderr.write("Provide 1 todo at a time.\n")
                 return self.do_help()
 
-            initialize_commands()
+            initialize_actions()
 
             if options['report']:
                 return self.do_report()
 
-            if self.has_concurency():
+            if PostDeployAction.objects.running().exists():
                 self.stderr.write("Please wait until all tasks are completed.")
                 return
 
             if options['auto']:
-                return self.do_execute(PostDeployAction.objects.todo().ids())
+                return self.do_execute(PostDeployAction.objects.todo())
 
             if options['all']:
-                return self.do_execute(PostDeployAction.objects.unprocessed().ids())
+                return self.do_execute(PostDeployAction.objects.unprocessed())
 
             if options['one']:
-                return self.do_execute([options['one']])
+                return self.do_execute(PostDeployAction.objects.filter(id=[options['one']]))
 
     def do_help(self):
         self.print_help("manage.py", "post_deploy")
-
-    def has_concurency(self):
-        return PostDeployAction.objects.running().exists()
 
     def do_report(self):
         if PostDeployAction.objects.unprocessed().count() == 0:
@@ -91,9 +88,8 @@ class Command(BaseCommand):
             for action in PostDeployAction.objects.completed().order_by('-completed_at'):
                 self.stdout.write(f"* {action.id} ({action.completed_at})")
 
-    def do_execute(self, action_ids):
-        if action_ids:
-            qs = PostDeployAction.objects.filter(id__in=action_ids)
+    def do_execute(self, qs):
+        if qs.count() > 0:
             qs.update(
                 started_at=timezone.localtime(),
                 completed_at=None,
@@ -102,10 +98,10 @@ class Command(BaseCommand):
             )
 
             self.stdout.write("Scheduled execute:")
-            for id in action_ids:
+            for id in qs.ids():
                 self.stdout.write(f"* {id}")
 
-            task_id = get_scheduler_manager().schedule(action_ids, self.context_manager.default_parameters())
+            task_id = get_scheduler_manager().schedule(qs.ids(), self.context_manager.default_parameters())
             qs.update(
                 task_id=task_id
             )

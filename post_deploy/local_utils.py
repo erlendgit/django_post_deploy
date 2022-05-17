@@ -6,7 +6,7 @@ from post_deploy.plugins.context import DefaultContext
 from post_deploy.plugins.scheduler import DefaultScheduler
 
 
-def initialize_commands():
+def initialize_actions():
     from post_deploy.utils import register_post_deploy
     action_list = {}
 
