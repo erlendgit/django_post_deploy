@@ -1,5 +1,7 @@
-* make tenants optional
-* make celery optional
-* Provide a README document
+* make tenants optional ✅
+* make celery optional ✅
+* Provide a README document ✅
 
-suggestion: provide abstract handlers
+* Provide tests
+* Complete the README document
+* Complete information that is required for PyPI
