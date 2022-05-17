@@ -16,15 +16,17 @@ class Command(BaseCommand):
         super(Command, self).add_arguments(parser=parser)
         parser.add_argument('--report', const=True, action='store_const',
                             help="Print the status of all actions.")
-        parser.add_argument('--deploy', const=True, action='store_const',
+        parser.add_argument('--auto', const=True, action='store_const',
                             help="Execute all pending actions that have auto=True (default setting).")
-        parser.add_argument('--execute', help="Execute one of the actions.")
+        parser.add_argument('--all', const=True, action='store_const',
+                            help="Execute all pending actions no matter the value of auto.")
+        parser.add_argument('--one', help="Execute one of the actions.")
 
     def handle(self, *args, **options):
         self.context_manager = get_context_manager(None)
         with self.context_manager.execute():
             todo_list = []
-            for todo in ['report', 'deploy', 'execute']:
+            for todo in ['report', 'auto', 'all', 'one']:
                 if options.get(todo):
                     todo_list.append(todo)
 
@@ -41,11 +43,14 @@ class Command(BaseCommand):
                 self.stderr.write("Please wait until all tasks are completed.")
                 return
 
-            if options['deploy']:
-                return self.do_deploy()
+            if options['auto']:
+                return self.do_execute(PostDeployAction.objects.todo().ids())
 
-            if options['execute']:
-                return self.do_execute([options['execute']])
+            if options['all']:
+                return self.do_execute(PostDeployAction.objects.unprocessed().ids())
+
+            if options['one']:
+                return self.do_execute([options['one']])
 
     def do_help(self):
         self.print_help("manage.py", "post_deploy")
@@ -54,45 +59,37 @@ class Command(BaseCommand):
         return PostDeployAction.objects.running().exists()
 
     def do_report(self):
+        if PostDeployAction.objects.unprocessed().count() == 0:
+            self.stdout.write("No pending actions found.")
 
-        self.stdout.write("Pending actions that can run automatically:")
         if PostDeployAction.objects.todo().exists():
+            self.stdout.write("Pending actions that can run automatically:")
             for action in PostDeployAction.objects.todo():
                 self.stdout.write("* %s" % action.id)
-        else:
-            self.stdout.write("(no actions)")
 
-        self.stdout.write("\nPending actions that need starting manually:")
         if PostDeployAction.objects.manual().exists():
+            self.stdout.write("\nPending actions that need starting manually:")
             for action in PostDeployAction.objects.manual():
                 if action.message:
                     self.stdout.write(f"* {action.id} ({action.message})")
                 else:
                     self.stdout.write(f"* {action.id}")
-        else:
-            self.stdout.write("(no actions)")
 
-        self.stdout.write("\nCurrently running actions:")
         if PostDeployAction.objects.running().exists():
+            self.stdout.write("\nCurrently running actions:")
             for action in PostDeployAction.objects.running():
                 self.stdout.write(f"* {action.id} ({action.started_at})")
-        else:
-            self.stdout.write("(no actions)")
 
-        self.stdout.write("\nCompleted actions:")
+        if PostDeployAction.objects.with_errors().exists():
+            self.stdout.write("\nActions that failed:")
+            for action in PostDeployAction.objects.with_errors():
+                self.stdout.write(f"* {action.id} ({action.completed_at})")
+                self.stdout.write(f"  {action.message}")
+
         if PostDeployAction.objects.completed().order_by('-completed_at').exists():
+            self.stdout.write("\nCompleted actions:")
             for action in PostDeployAction.objects.completed().order_by('-completed_at'):
                 self.stdout.write(f"* {action.id} ({action.completed_at})")
-        else:
-            self.stdout.write("(no actions)")
-
-    def do_deploy(self):
-        action_ids = []
-        for action in PostDeployAction.objects.filter(available=True, auto=True):
-            if action.is_auto:
-                action_ids.append(action.id)
-
-        self.do_execute(action_ids)
 
     def do_execute(self, action_ids):
         if action_ids:
