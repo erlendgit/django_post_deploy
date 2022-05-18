@@ -1,0 +1,5 @@
+include README.md
+include LICENSE.txt
+recursive-include post_deploy/management *.py
+recursive-include post_deploy/migrations *.py
+recursive-include post_deploy/plugins *.py
