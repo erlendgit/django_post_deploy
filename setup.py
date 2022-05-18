@@ -1,19 +1,21 @@
 from distutils.core import setup
+from setuptools import find_packages
 
 setup(
     name='django_post_deploy',
-    packages=['post_deploy'],
-    version='0.9.2',
+    packages=find_packages(),
+    version='0.9.3',
     license='cc-by-4.0',
     description='Add a generic method to have post-deploy actions done.',
     author='Erlend ter Maat',
     author_email='erwitema@gmail.com',
     url='https://github.com/erlendgit/django_post_deploy',
-    download_url='https://github.com/erlendgit/django_post_deploy/archive/refs/tags/v0.9.2.tar.gz',
+    download_url='https://github.com/erlendgit/django_post_deploy/archive/refs/tags/v0.9.3.tar.gz',
     keywords=['Django', 'Deployment', 'Management', 'CLI'],
     install_requires=[
         'Django',
     ],
+    include_package_data=True,
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
