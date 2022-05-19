@@ -1,4 +1,5 @@
-from celery import Celery, AsyncResult
+from celery import Celery
+from celery.result import AsyncResult
 
 from django.conf import settings
 from django.utils.module_loading import import_string
