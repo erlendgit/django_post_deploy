@@ -44,13 +44,13 @@ class Command(BaseCommand):
                 return
 
             if options['auto']:
-                return self.do_execute(PostDeployAction.objects.todo())
+                return self.do_execute(PostDeployAction.objects.todo().ids())
 
             if options['all']:
-                return self.do_execute(PostDeployAction.objects.unprocessed())
+                return self.do_execute(PostDeployAction.objects.unprocessed().ids())
 
             if options['one']:
-                return self.do_execute(PostDeployAction.objects.filter(id=[options['one']]))
+                return self.do_execute([options['one']])
 
     def do_help(self):
         self.print_help("manage.py", "post_deploy")
@@ -88,20 +88,24 @@ class Command(BaseCommand):
             for action in PostDeployAction.objects.completed().order_by('-completed_at'):
                 self.stdout.write(f"* {action.id} ({action.completed_at})")
 
-    def do_execute(self, qs):
-        if qs.count() > 0:
-            qs.update(
-                started_at=timezone.localtime(),
-                completed_at=None,
-                message=None,
-                done=False
-            )
+    def do_execute(self, ids):
+        real_ids = PostDeployAction.objects.filter(id__in=ids).ids()
+        if len(real_ids) == 0:
+            self.stderr.write(f"No tasks available.")
+            return
 
-            self.stdout.write("Scheduled execute:")
-            for id in qs.ids():
-                self.stdout.write(f"* {id}")
+        PostDeployAction.objects.filter(id__in=real_ids).update(
+            started_at=timezone.localtime(),
+            completed_at=None,
+            message=None,
+            done=False
+        )
 
-            task_id = get_scheduler_manager().schedule(qs.ids(), self.context_manager.default_parameters())
-            qs.update(
-                task_id=task_id
-            )
+        self.stdout.write("Scheduled execute:")
+        for id in real_ids:
+            self.stdout.write(f"* {id}")
+
+        task_id = get_scheduler_manager().schedule(real_ids, self.context_manager.default_parameters())
+        PostDeployAction.objects.filter(id__in=real_ids).update(
+            task_id=task_id
+        )

@@ -1,9 +1,13 @@
+from inspect import isfunction
+
 from django.conf import settings
+from django.utils import timezone
 from django.utils.module_loading import import_string
 
 from post_deploy.models import PostDeployAction
 from post_deploy.plugins.context import DefaultContext
 from post_deploy.plugins.scheduler import DefaultScheduler
+from post_deploy.utils import register_post_deploy
 
 
 def initialize_actions():
@@ -16,7 +20,7 @@ def initialize_actions():
         except ModuleNotFoundError:
             pass
 
-    for id, configuration in register_post_deploy.class_repository.items():
+    for id, configuration in register_post_deploy.bindings.items():
         action, created = PostDeployAction.objects.get_or_create(id=id)
         action.auto = configuration['auto']
         action.description = configuration['description']
@@ -33,11 +37,34 @@ def initialize_actions():
     return action_list
 
 
+def run_deploy_action(action_ids):
+    initialize_actions()
+    for id in action_ids:
+        action = PostDeployAction.objects.get(id=id)
+        config = register_post_deploy.bindings.get(id)
+
+        if config and action:
+            try:
+                vehicle = config['class']
+                if isfunction(vehicle):
+                    vehicle()
+                else:
+                    raise Exception(f"{vehicle} is not a function")
+            except Exception as e:
+                action.message = str(e)
+            finally:
+                action.completed_at = timezone.localtime()
+                action.done = True
+                action.save()
+
+
 def get_context_manager(context_parameters) -> DefaultContext:
-    Manager = import_string(getattr(settings, 'POST_DEPLOY_CONTEXT_MANAGER', 'post_deploy.plugins.context.DefaultContext'))
+    Manager = import_string(
+        getattr(settings, 'POST_DEPLOY_CONTEXT_MANAGER', 'post_deploy.plugins.context.DefaultContext'))
     return Manager(context_parameters)
 
 
 def get_scheduler_manager() -> DefaultScheduler:
-    Manager = import_string(getattr(settings, 'POST_DEPLOY_SCHEDULER_MANAGER', 'post_deploy.plugins.scheduler.DefaultScheduler'))
+    Manager = import_string(
+        getattr(settings, 'POST_DEPLOY_SCHEDULER_MANAGER', 'post_deploy.plugins.scheduler.DefaultScheduler'))
     return Manager()
