@@ -3,8 +3,6 @@ import uuid
 from django.db import models
 from django.utils import timezone
 
-from post_deploy.local_utils import get_scheduler_manager
-
 
 class PostDeployActionQueryset(models.QuerySet):
 
@@ -59,7 +57,9 @@ class PostDeployAction(models.Model):
         if not self.task_id or self.done:
             return
 
+        from post_deploy.local_utils import get_scheduler_manager
         scheduler = get_scheduler_manager()
+
         if scheduler.task_ready(self.task_id):
             self.done = True
             self.completed_at = timezone.localtime()
