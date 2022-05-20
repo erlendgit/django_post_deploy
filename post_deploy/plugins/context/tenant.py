@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from django_tenants.utils import parse_tenant_config_path, tenant_context
+from django_tenants.utils import parse_tenant_config_path, schema_context
 
 from post_deploy.plugins.context import DefaultContext
 
@@ -13,5 +13,5 @@ class TenantContext(DefaultContext):
 
     @contextmanager
     def execute(self):
-        with tenant_context(self.parameters['schema']):
+        with schema_context(self.parameters['schema']):
             yield
