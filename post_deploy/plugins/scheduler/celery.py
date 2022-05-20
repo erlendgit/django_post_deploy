@@ -26,7 +26,7 @@ class CeleryScheduler(DefaultScheduler):
         app = CeleryScheduler.get_celery_app()
         return AsyncResult(id=id, app=app).status
 
-    def schedule(self, action_ids, **kwargs):
+    def schedule(self, action_ids, context_kwargs):
         from post_deploy.tasks import deploy_task
-        result = deploy_task.delay(action_ids, **kwargs)
+        result = deploy_task.delay(action_ids, context_kwargs)
         return result.id
