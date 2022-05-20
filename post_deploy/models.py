@@ -25,7 +25,7 @@ class PostDeployActionQueryset(models.QuerySet):
         return self.filter(started_at__isnull=False, done=False)
 
     def ids(self):
-        return self.values_list('id', flat=True)
+        return [id for id in self.values_list('id', flat=True)]
 
 
 class PostDeployAction(models.Model):
