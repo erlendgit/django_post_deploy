@@ -22,9 +22,9 @@ class CeleryScheduler(DefaultScheduler):
             raise PostDeployConfigurationError(
                 "Put the path to the celery app in POST_DEPLOY_CELERY at your project settings.")
 
-    def task_status(self, id):
+    def task_ready(self, id):
         app = CeleryScheduler.get_celery_app()
-        return AsyncResult(id=id, app=app).status
+        return AsyncResult(id=id, app=app).ready()
 
     def schedule(self, action_ids, context_kwargs):
         from post_deploy.tasks import deploy_task

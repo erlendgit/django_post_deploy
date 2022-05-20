@@ -89,12 +89,13 @@ class Command(BaseCommand):
                 self.stdout.write(f"* {action.id} ({action.completed_at})")
 
     def do_execute(self, ids):
-        real_ids = PostDeployAction.objects.filter(id__in=ids).ids()
-        if len(real_ids) == 0:
+        actions = [action for action in PostDeployAction.objects.filter(uuid__in=ids)]
+        if len(actions) == 0:
             self.stderr.write(f"No tasks available.")
             return
 
-        PostDeployAction.objects.filter(id__in=real_ids).update(
+        real_ids = [action.uuid for action in actions]
+        PostDeployAction.objects.filter(uuid__in=real_ids).update(
             started_at=timezone.localtime(),
             completed_at=None,
             message=None,
@@ -102,10 +103,10 @@ class Command(BaseCommand):
         )
 
         self.stdout.write("Scheduled execute:")
-        for id in real_ids:
-            self.stdout.write(f"* {id}")
+        for action in actions:
+            self.stdout.write(f"* {action.id}")
 
         task_id = get_scheduler_manager().schedule(real_ids, self.context_manager.default_parameters())
-        PostDeployAction.objects.filter(id__in=real_ids).update(
+        PostDeployAction.objects.filter(uuid__in=real_ids).update(
             task_id=task_id
         )

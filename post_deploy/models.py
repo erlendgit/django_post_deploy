@@ -1,4 +1,9 @@
+import uuid
+
 from django.db import models
+from django.utils import timezone
+
+from post_deploy.local_utils import get_scheduler_manager
 
 
 class PostDeployActionQueryset(models.QuerySet):
@@ -25,13 +30,14 @@ class PostDeployActionQueryset(models.QuerySet):
         return self.filter(started_at__isnull=False, done=False)
 
     def ids(self):
-        return [id for id in self.values_list('id', flat=True)]
+        return [id for id in self.values_list('uuid', flat=True)]
 
 
 class PostDeployAction(models.Model):
     objects = PostDeployActionQueryset.as_manager()
 
     id = models.CharField(max_length=255, primary_key=True)
+    uuid = models.UUIDField(default=uuid.uuid4, null=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     started_at = models.DateTimeField(blank=True, null=True)
@@ -48,3 +54,12 @@ class PostDeployAction(models.Model):
 
     def __str__(self):
         return self.id
+
+    def sync_status(self):
+        if not self.task_id or self.done:
+            return
+
+        scheduler = get_scheduler_manager()
+        if scheduler.task_ready(self.task_id):
+            self.done = True
+            self.completed_at = timezone.localtime()

@@ -24,6 +24,7 @@ def initialize_actions():
         action, created = PostDeployAction.objects.get_or_create(id=id)
         action.auto = configuration['auto']
         action.description = configuration['description']
+        action.sync_status()
         action.save()
 
         action_list[id] = action
@@ -37,11 +38,11 @@ def initialize_actions():
     return action_list
 
 
-def run_deploy_action(action_ids):
+def run_deploy_action(action_uuids):
     initialize_actions()
-    for id in action_ids:
-        action = PostDeployAction.objects.get(id=id)
-        config = register_post_deploy.bindings.get(id)
+    for uuid in action_uuids:
+        action = PostDeployAction.objects.get(uuid=uuid)
+        config = register_post_deploy.bindings.get(action.id)
 
         if config and action:
             try:

@@ -11,9 +11,6 @@ class DefaultContext():
 
     @contextmanager
     def execute(self):
-        try:
-            yield
-        finally:
-            pass
+        yield
 
 
