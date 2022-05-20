@@ -60,6 +60,7 @@ class PostDeployAction(models.Model):
         from post_deploy.local_utils import get_scheduler_manager
         scheduler = get_scheduler_manager()
 
-        if scheduler.task_ready(self.task_id):
+        if scheduler.task_ready(str(self.task_id)):
             self.done = True
             self.completed_at = timezone.localtime()
+            self.message = "Abnormal termination detected. Please check the logs for details."
