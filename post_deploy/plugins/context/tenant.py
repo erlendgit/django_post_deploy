@@ -8,7 +8,7 @@ class TenantContext(DefaultContext):
 
     def default_parameters(self):
         return {
-            'schema': parse_tenant_config_path()
+            'schema': parse_tenant_config_path("")
         }
 
     @contextmanager
