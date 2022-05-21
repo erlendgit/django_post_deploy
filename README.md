@@ -1,13 +1,13 @@
 Django Post Deploy
 ===
 
-This module adds a way automate release-specific post-deploy/post-migrate tasks to your Django project.
+This module adds a way automate release-specific post-deploy/post-migrate actions to your Django project.
 
 ### Features
 
-* Allow tasks to be scheduled with the deployment automation
-  * But also give the oppurtunity to keep special tasks out of the automation and have those executed manually.
-* Schedule the tasks to be executed in Celery.
+* Allow actions to be scheduled with the deployment automation
+  * But also give the oppurtunity to keep special actions out of the automation and have those executed manually.
+* Schedule the actions to be executed in Celery.
   * The task scheduler is configurable, so you can write your own.
 * Support for django_tenants.
 
@@ -24,8 +24,8 @@ Alternative to this module you can use:
 
 This module is of use for your application if you:
 
-* want to keep management tasks clean of one-time-used code.
-* want to have release finishing tasks executed in a known state of the application.
+* want to keep management commands clean of one-time-used code.
+* want to have release finishing tasks executed in a certain and known state of the application.
 
 ## Example
 
@@ -38,7 +38,7 @@ def make_non_code_changes_to_complete_the_next_release():
     pass
 
 @register_post_deploy(auto=False)
-def this_task_must_be_triggered_manually():
+def this_action_must_be_triggered_manually():
     pass
 ```
 
@@ -48,19 +48,19 @@ python manage.py deploy --auto
 ```
 
 ```shell
-# This line is executed when the time is right for specific tasks
-$ ./manage.py deploy --one core.this_task_must_be_triggered_manually
+# This line is executed when the time is right for specific actions
+$ ./manage.py deploy --one core.this_action_must_be_triggered_manually
 
-# Or like this: both auto and manual tasks are scheduled:
+# Or like this: both auto and manual actions are scheduled:
 $ ./manage.py deploy --all
 
-# Inspect the status of the tasks like so, to see if there are errors for any task.
+# Inspect the status of the actions like so, to see if there are errors for any action.
 $ ./manage.py deploy --report
 ```
 
 ## Configuration
 
-Out of the box the deploy task runs the actions serially. However, if you use Celery you have to add this to your settings:
+Out of the box the deploy management command runs the actions serially. However, if you use Celery you have to add this to your settings:
 
 ### Celery
 
