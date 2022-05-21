@@ -12,7 +12,7 @@ setup(
     license='cc-by-4.0',
     description='A generic way to have post-deploy actions done.',
     long_description=io.open("README.md", encoding='utf-8').read() if exists("README.md") else "",
-    long_description_content_type='text/x-md',
+    long_description_content_type='text/markdown',
     author='Erlend ter Maat',
     author_email='erwitema@gmail.com',
     url='https://github.com/erlendgit/django_post_deploy',
