@@ -1,3 +1,3 @@
 from .utils import register_post_deploy
 
-VERSION = 'v0.9.16'
+VERSION = 'v1.0'
