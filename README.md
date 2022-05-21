@@ -115,7 +115,7 @@ POST_DEPLOY_CONTEXT_MANAGER = 'post_deploy.plugins.context.tenant.TenantContext'
 # all_tenants_command example:
 $ ./manage.py all_tenants_command deploy --all
 
-# tenant_command example
+# tenant_command example:
 $ ./manage.py tenant_command deploy --report --schema=public
 ```
 
@@ -140,8 +140,7 @@ def example_on_how_to_exclude_execution_schema_based():
 
 * This module provides a model, and therefore require a common relational database to be installed. There are however no relations between multiple models in this module, so it may be possible that it works with a non-relational database too. But it is not tested in non-relational database configurations.
 
-License information
----
+## License information
 
 django_post_deploy (c) by Erlend ter Maat
 
