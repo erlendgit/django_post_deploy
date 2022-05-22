@@ -127,7 +127,7 @@ from django_tenants.utils import parse_tenant_config_path
 from post_deploy import post_deploy_action
 
 @post_deploy_action
-def example_on_how_to_exclude_execution_schema_based():
+def example_on_how_alter_operation_based_on_schema():
     if parse_tenant_config_path("") == 'public':
         # Do 'public' specific operations.
         pass
