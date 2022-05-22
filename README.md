@@ -31,13 +31,13 @@ This module is of use for your application if you:
 
 ```python
 # Inside a custom django module's post_deploy.py
-from post_deploy import register_post_deploy
+from post_deploy import post_deploy_action
 
-@register_post_deploy(auto=True)
+@post_deploy_action
 def make_non_code_changes_to_complete_the_next_release():
     pass
 
-@register_post_deploy(auto=False)
+@post_deploy_action(auto=False)
 def this_action_must_be_triggered_manually():
     pass
 ```
@@ -124,9 +124,9 @@ Example on how to have actions behave different based on the selected schema:
 ```python
 # Inside a module's post_deploy.py
 from django_tenants.utils import parse_tenant_config_path
-from post_deploy import register_post_deploy
+from post_deploy import post_deploy_action
 
-@register_post_deploy(auto=True)
+@post_deploy_action
 def example_on_how_to_exclude_execution_schema_based():
     if parse_tenant_config_path("") == 'public':
         # Do 'public' specific operations.
