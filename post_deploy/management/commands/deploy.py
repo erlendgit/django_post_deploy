@@ -54,7 +54,10 @@ class Command(BaseCommand):
                 return self.do_execute(PostDeployAction.objects.unprocessed().ids())
 
             if options['one']:
-                return self.do_execute([options['one']])
+                try:
+                    return self.do_execute(PostDeployAction.objects.one(options['one']).ids())
+                except PostDeployAction.DoesNotExist:
+                    self.stderr.write("Action not found.")
 
     def do_help(self):
         self.print_help("manage.py", "post_deploy")
@@ -95,7 +98,7 @@ class Command(BaseCommand):
     def do_execute(self, ids):
         actions = [action for action in PostDeployAction.objects.filter(uuid__in=ids)]
         if len(actions) == 0:
-            self.stderr.write(f"No tasks available.")
+            self.stdout.write(f"No tasks found for scheduling.")
             return
 
         real_ids = [action.uuid for action in actions]

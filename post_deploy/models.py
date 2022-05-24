@@ -27,6 +27,12 @@ class PostDeployActionQueryset(models.QuerySet):
     def running(self):
         return self.filter(started_at__isnull=False, done=False)
 
+    def one(self, id):
+        qs = self.filter(id=id)
+        if qs.count() != 1:
+            raise PostDeployAction.DoesNotExist()
+        return qs
+
     def ids(self):
         return [id for id in self.values_list('uuid', flat=True)]
 
