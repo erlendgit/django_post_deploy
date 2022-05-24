@@ -1,5 +1,8 @@
+import logging
 from inspect import isfunction
 
+import django.db
+from django.apps import apps
 from django.conf import settings
 from django.utils import timezone
 from django.utils.module_loading import import_string
@@ -9,10 +12,14 @@ from post_deploy.plugins.context import DefaultContext
 from post_deploy.plugins.scheduler import DefaultScheduler
 from post_deploy.utils import register_post_deploy
 
+logger = logging.getLogger(__name__)
+
 
 def initialize_actions():
     from post_deploy.utils import register_post_deploy
-    action_list = {}
+
+    if not model_ok('post_deploy.PostDeployAction'):
+        return {}
 
     for app in settings.INSTALLED_APPS:
         try:
@@ -20,6 +27,7 @@ def initialize_actions():
         except ModuleNotFoundError:
             pass
 
+    action_list = {}
     for id, configuration in register_post_deploy.bindings.items():
         action, created = PostDeployAction.objects.get_or_create(id=id)
         action.auto = configuration['auto']
@@ -69,3 +77,13 @@ def get_scheduler_manager() -> DefaultScheduler:
     Manager = import_string(
         getattr(settings, 'POST_DEPLOY_SCHEDULER_MANAGER', 'post_deploy.plugins.scheduler.DefaultScheduler'))
     return Manager()
+
+
+def model_ok(model_name):
+    try:
+        Model = apps.get_model(model_name)
+        Model.objects.count()
+        return True
+    except django.db.ProgrammingError as e:
+        logger.warning(e)
+    return False

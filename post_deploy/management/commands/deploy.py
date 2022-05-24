@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 
 from post_deploy.models import PostDeployAction
-from post_deploy.local_utils import initialize_actions, get_context_manager, get_scheduler_manager
+from post_deploy.local_utils import initialize_actions, get_context_manager, get_scheduler_manager, model_ok
 
 
 class Command(BaseCommand):
@@ -25,6 +25,10 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.context_manager = get_context_manager(None)
         with self.context_manager.execute():
+            if not model_ok('post_deploy.PostDeployAction'):
+                self.stdout.write("Model is not ready. Is your site configured properly?")
+                return
+
             todo_list = []
             for todo in ['report', 'auto', 'all', 'one']:
                 if options.get(todo):
