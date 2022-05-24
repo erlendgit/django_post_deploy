@@ -21,9 +21,9 @@ def initialize_actions():
     if not model_ok('post_deploy.PostDeployAction'):
         return {}
 
-    for app in settings.INSTALLED_APPS:
+    for app in apps.get_app_configs():
         try:
-            __import__(f"{app}.post_deploy")
+            __import__(f"{app.module.__name__}.post_deploy")
         except ModuleNotFoundError:
             pass
 
