@@ -60,9 +60,21 @@ $ ./manage.py deploy --report
 
 ## Configuration
 
-Out of the box the deploy management command runs the actions serially. However, if you use Celery you have to add this to your settings:
+The module is to be installed as an app in the django settings.
+
+```python
+# inside your projects settings.py file:
+
+INSTALLED_APPS = [
+  ...,
+  'post_deploy',
+]
+```
+
 
 ### Celery
+
+Out of the box the deploy management command runs the actions serially. However, if you use Celery you have to add this to your settings:
 
 ```python
 # inside your projects settings.py file:
@@ -102,8 +114,23 @@ class CeleryScheduler(DefaultScheduler):
 
 This module supports the django_tenants module. In order to make the post deploy actions tenant aware two things are different from normal operation. You have to (1) configure a context manager, and (2) the management command is a little different.
 
+**BE AWARE!!!** Make sure that you install the post_deploy app in the SHARED_APPS section. Not doing this may lead to unexpected results.
+
+
 ```python
 # inside your projects settings.py file:
+
+SHARED_APPS = [
+  ...,
+  'post_deploy',
+]
+
+TENANT_APPS = [
+  ...,
+  # DO NOT PUT IT HERE!
+]
+
+...
 
 POST_DEPLOY_CONTEXT_MANAGER = 'post_deploy.plugins.context.tenant.TenantContext'
 ```
