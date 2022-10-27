@@ -36,6 +36,15 @@ class PostDeployActionQueryset(models.QuerySet):
     def ids(self):
         return [id for id in self.values_list('uuid', flat=True)]
 
+    def start(self):
+        self.update(
+            started_at=timezone.localtime(),
+            completed_at=None,
+            message=None,
+            done=False
+        )
+        return self
+
 
 class PostDeployAction(models.Model):
     objects = PostDeployActionQueryset.as_manager()

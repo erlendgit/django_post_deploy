@@ -107,12 +107,7 @@ class Command(BaseCommand):
             return
 
         real_ids = [action.uuid for action in actions]
-        PostDeployAction.objects.filter(uuid__in=real_ids).update(
-            started_at=timezone.localtime(),
-            completed_at=None,
-            message=None,
-            done=False
-        )
+        PostDeployAction.objects.filter(uuid__in=real_ids).start()
 
         self.stdout.write("Scheduled execute:")
         for action in actions:
