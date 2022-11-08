@@ -17,6 +17,7 @@ def populate_log(apps, schema_editor):
     PostDeployAction = apps.get_model('post_deploy', 'PostDeployAction')
     PostDeployLog = apps.get_model('post_deploy', 'PostDeployLog')
 
+    print("at populate_log")
     print(PostDeployAction.objects.all())
 
     for action in PostDeployAction.objects.all():
