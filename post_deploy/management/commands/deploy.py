@@ -26,7 +26,7 @@ class Command(BaseCommand):
                             help="Execute all pending actions no matter the value of auto.")
         parser.add_argument('--one', help="Execute one of the actions.")
         parser.add_argument('--once', help="Execute the given action if it is not completed correctly.")
-        parser.add_argument('--skip', const=True, action='store_const', help="Execute the given action if it is not completed correctly.")
+        parser.add_argument('--skip', const=True, action='store_const', help="Skip all unprocessed tasks.")
 
     def handle(self, *args, **options):
         self.context_manager = get_context_manager(None)
