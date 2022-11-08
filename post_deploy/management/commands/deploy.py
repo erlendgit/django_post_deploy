@@ -1,4 +1,5 @@
 from django.core.management.base import BaseCommand
+from django.utils import timezone
 
 from post_deploy.local_utils import initialize_actions, get_context_manager, get_scheduler_manager, model_ok
 
@@ -25,6 +26,7 @@ class Command(BaseCommand):
                             help="Execute all pending actions no matter the value of auto.")
         parser.add_argument('--one', help="Execute one of the actions.")
         parser.add_argument('--once', help="Execute the given action if it is not completed correctly.")
+        parser.add_argument('--skip', const=True, action='store_const', help="Execute the given action if it is not completed correctly.")
 
     def handle(self, *args, **options):
         self.context_manager = get_context_manager(None)
@@ -37,7 +39,7 @@ class Command(BaseCommand):
             PostDeployLog.objects.sync_status()
 
             todo_list = []
-            for todo in ['status', 'todo', 'auto', 'all', 'one', 'once']:
+            for todo in ['status', 'todo', 'auto', 'all', 'one', 'once', 'skip']:
                 if options.get(todo):
                     todo_list.append(todo)
 
@@ -50,6 +52,9 @@ class Command(BaseCommand):
 
             if 'todo' in todo_list:
                 return self.do_todo()
+
+            if 'skip' in todo_list:
+                return self.do_skip()
 
             if 'auto' in todo_list:
                 return self.do_execute(PostDeployLog.objects.auto(self._bindings))
@@ -65,6 +70,13 @@ class Command(BaseCommand):
 
     def do_help(self):
         self.print_help("manage.py", "post_deploy")
+
+    def do_skip(self):
+        for import_name in PostDeployLog.objects.unprocessed(self._bindings):
+            action_log:PostDeployLog = PostDeployLog.objects.register_action(import_name)
+            action_log.started_at = timezone.localtime()
+            action_log.completed_at = timezone.localtime()
+            action_log.save()
 
     def do_once(self, import_name):
         if not PostDeployLog.objects.is_success(import_name):
