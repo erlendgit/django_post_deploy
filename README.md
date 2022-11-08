@@ -118,7 +118,7 @@ This module supports the django_tenants module. In order to make the post deploy
 
 
 ```python
-# inside your projects settings.py file:
+# inside your projects settings.py file, two additions:
 
 SHARED_APPS = [
   ...,
@@ -127,7 +127,7 @@ SHARED_APPS = [
 
 TENANT_APPS = [
   ...,
-  # DO NOT PUT IT HERE!
+  'post_deploy',
 ]
 
 ...
