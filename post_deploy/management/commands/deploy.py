@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
 from django.utils import timezone
+from django.utils.timezone import get_current_timezone as ltz
 
 from post_deploy.local_utils import initialize_actions, get_context_manager, get_scheduler_manager, model_ok
 
@@ -91,17 +92,18 @@ class Command(BaseCommand):
         if PostDeployLog.objects.running().exists():
             self.stdout.write("\nCurrently running actions:")
             for action in PostDeployLog.objects.running():
-                self.stdout.write(f"* {action.import_name} ({action.started_at or action.created_at})")
+                start = action.started_at or action.created_at
+                self.stdout.write(f"* {action.import_name} ({start.astimezone(ltz())})")
 
         if PostDeployLog.objects.completed().with_errors().exists():
             self.stdout.write("\nActions that failed:")
             for action in PostDeployLog.objects.with_errors():
-                self.stdout.write(f"* {action.import_name} ({action.completed_at} {action.message})")
+                self.stdout.write(f"* {action.import_name} ({action.completed_at.astimezone(ltz())} {action.message})")
 
         if PostDeployLog.objects.completed().order_by('-completed_at').exists():
             self.stdout.write("\nCompleted actions:")
             for action in PostDeployLog.objects.completed().order_by('-completed_at'):
-                self.stdout.write(f"* {action.import_name} ({action.completed_at})")
+                self.stdout.write(f"* {action.import_name} ({action.completed_at.astimezone(ltz())})")
 
     def do_todo(self):
         auto_actions = PostDeployLog.objects.auto(self._bindings)
