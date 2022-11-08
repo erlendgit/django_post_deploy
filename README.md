@@ -49,13 +49,23 @@ python manage.py deploy --auto
 
 ```shell
 # This line is executed when the time is right for specific actions
-$ ./manage.py deploy --one core.this_action_must_be_triggered_manually
+$ ./manage.py deploy --one core.post_deploy.this_action_must_be_triggered_manually
 
 # Or like this: both auto and manual actions are scheduled:
 $ ./manage.py deploy --all
 
 # Inspect the status of the actions like so, to see if there are errors for any action.
 $ ./manage.py deploy --report
+
+# This is an example of running a custom action
+$ ./manage.py deploy --one core.a_custom_repository_of_functions.a_custom_function_to_be_executed
+
+# This is an example of running an action only if it has not started before, or when it completed with errors
+$ ./manage.py deploy --once core.post_deploy.failed_before_or_did_not_run_yet
+
+# In this example all non-processed tasks are marked complete
+$ ./manage.py deploy --skip
+
 ```
 
 ## Configuration
@@ -118,7 +128,7 @@ This module supports the django_tenants module. In order to make the post deploy
 
 
 ```python
-# inside your projects settings.py file:
+# inside your projects settings.py file, two additions:
 
 SHARED_APPS = [
   ...,
@@ -127,7 +137,7 @@ SHARED_APPS = [
 
 TENANT_APPS = [
   ...,
-  # DO NOT PUT IT HERE!
+  'post_deploy',
 ]
 
 ...

@@ -5,6 +5,31 @@ import django.utils.timezone
 import uuid
 
 
+def library_to_id(key):
+    from django.utils.module_loading import import_string
+
+    module, method = key.split('.')
+    class_path = '.'.join([module, 'post_deploy', method])
+    assert import_string(class_path), "Classpath [%s] is not a function." % class_path
+    return class_path
+
+
+def populate_log(apps, schema_editor):
+    # load post_deploy_actions
+    PostDeployAction = apps.get_model('post_deploy', 'PostDeployAction')
+    PostDeployLog = apps.get_model('post_deploy', 'PostDeployLog')
+
+    for action in PostDeployAction.objects.all():
+        if action.completed_at:
+            PostDeployLog.objects.create(
+                import_name=library_to_id(action.id),
+                created_at=action.started_at,
+                completed_at=action.completed_at,
+                task_id=action.task_id,
+                message=action.message,
+            )
+
+
 class Migration(migrations.Migration):
     dependencies = [
         ('post_deploy', '0001_initial'),
@@ -27,4 +52,5 @@ class Migration(migrations.Migration):
                 'ordering': ('-created_at',),
             },
         ),
+        migrations.RunPython(populate_log, reverse_code=migrations.RunPython.noop),
     ]
