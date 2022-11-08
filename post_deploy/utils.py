@@ -38,10 +38,8 @@ class register_post_deploy():
         return self.decorated(*args, **kwargs)
 
     def register_input(self, c):
-        app = c.__module__.split('.')[0]
-        key = f"{app}.{c.__name__}"
+        key = f"{c.__module__}.{c.__qualname__}"
         register_post_deploy.bindings[key] = {
-            "class": c,
             "auto": self.auto,
             "description": self.description,
         }

@@ -1,12 +1,13 @@
 from django.core.management.base import BaseCommand
-from django.utils import timezone
 
-from post_deploy.models import PostDeployAction
 from post_deploy.local_utils import initialize_actions, get_context_manager, get_scheduler_manager, model_ok
+
+from post_deploy.models import PostDeployLog
 
 
 class Command(BaseCommand):
     help = "Execute post deployment actions."
+    _bindings = None
 
     def __init__(self):
         super(Command, self).__init__()
@@ -23,16 +24,20 @@ class Command(BaseCommand):
         parser.add_argument('--all', const=True, action='store_const',
                             help="Execute all pending actions no matter the value of auto.")
         parser.add_argument('--one', help="Execute one of the actions.")
+        parser.add_argument('--once', help="Execute the given action if it is not completed correctly.")
 
     def handle(self, *args, **options):
         self.context_manager = get_context_manager(None)
         with self.context_manager.execute():
-            if not model_ok('post_deploy.PostDeployAction'):
+            if not model_ok('post_deploy.PostDeployLog'):
                 self.stdout.write("Model is not ready. Is your site configured properly?")
                 return
 
+            self._bindings = initialize_actions()
+            PostDeployLog.objects.sync_status()
+
             todo_list = []
-            for todo in ['status', 'todo', 'auto', 'all', 'one']:
+            for todo in ['status', 'todo', 'auto', 'all', 'one', 'once']:
                 if options.get(todo):
                     todo_list.append(todo)
 
@@ -40,80 +45,86 @@ class Command(BaseCommand):
                 self.stderr.write("Provide 1 todo at a time.\n")
                 return self.do_help()
 
-            initialize_actions()
+            if 'status' in todo_list:
+                return self.do_status()
 
-            if options['status']:
-                return self.do_report()
-
-            if options['todo']:
+            if 'todo' in todo_list:
                 return self.do_todo()
 
-            if PostDeployAction.objects.running().exists():
-                self.stderr.write("Please wait until all tasks are completed.")
-                return
+            if 'auto' in todo_list:
+                return self.do_execute(PostDeployLog.objects.auto(self._bindings))
 
-            if options['auto']:
-                return self.do_execute(PostDeployAction.objects.todo().ids())
+            if 'all' in todo_list:
+                return self.do_execute(PostDeployLog.objects.unprocessed(self._bindings))
 
-            if options['all']:
-                return self.do_execute(PostDeployAction.objects.unprocessed().ids())
+            if 'once' in todo_list:
+                return self.do_once(options['once'])
 
-            if options['one']:
-                try:
-                    return self.do_execute(PostDeployAction.objects.one(options['one']).ids())
-                except PostDeployAction.DoesNotExist:
-                    self.stderr.write("Action not found.")
+            if 'one' in todo_list:
+                return self.do_one(options['one'])
 
     def do_help(self):
         self.print_help("manage.py", "post_deploy")
 
-    def do_report(self):
-        if PostDeployAction.objects.running().exists():
+    def do_once(self, import_name):
+        if not PostDeployLog.objects.is_success(import_name):
+            self.do_execute([import_name])
+        else:
+            self.stdout.write("Already completed %s" % import_name)
+
+    def do_one(self, import_name):
+        return self.do_execute([import_name])
+
+    def do_status(self):
+        if PostDeployLog.objects.running().exists():
             self.stdout.write("\nCurrently running actions:")
-            for action in PostDeployAction.objects.running():
-                self.stdout.write(f"* {action.id} ({action.started_at})")
+            for action in PostDeployLog.objects.running():
+                self.stdout.write(f"* {action.import_name} ({action.started_at or action.created_at})")
 
-        if PostDeployAction.objects.with_errors().exists():
+        if PostDeployLog.objects.completed().with_errors().exists():
             self.stdout.write("\nActions that failed:")
-            for action in PostDeployAction.objects.with_errors():
-                self.stdout.write(f"* {action.id} ({action.completed_at})")
-                self.stdout.write(f"  {action.message}")
+            for action in PostDeployLog.objects.with_errors():
+                self.stdout.write(f"* {action.import_name} ({action.completed_at} {action.message})")
 
-        if PostDeployAction.objects.completed().order_by('-completed_at').exists():
+        if PostDeployLog.objects.completed().order_by('-completed_at').exists():
             self.stdout.write("\nCompleted actions:")
-            for action in PostDeployAction.objects.completed().order_by('-completed_at'):
-                self.stdout.write(f"* {action.id} ({action.completed_at})")
+            for action in PostDeployLog.objects.completed().order_by('-completed_at'):
+                self.stdout.write(f"* {action.import_name} ({action.completed_at})")
 
     def do_todo(self):
-        if PostDeployAction.objects.todo().exists():
-            for action in PostDeployAction.objects.todo():
-                self.stdout.write("a: %s" % action.id)
+        auto_actions = PostDeployLog.objects.auto(self._bindings)
+        if auto_actions:
+            for import_name in auto_actions:
+                self.stdout.write("a: %s" % import_name)
 
-        if PostDeployAction.objects.manual().exists():
-            for action in PostDeployAction.objects.manual():
-                if action.message:
-                    self.stdout.write(f"m: {action.id} ({action.message})")
-                else:
-                    self.stdout.write(f"m: {action.id}")
+        manual_actions = PostDeployLog.objects.manual(self._bindings)
+        if manual_actions:
+            for import_name in manual_actions:
+                self.stdout.write(f"m: {import_name}")
 
-        if PostDeployAction.objects.with_errors().exists():
-            for action in PostDeployAction.objects.with_errors():
-                self.stdout.write(f"F! {action.id} ({action.message})")
+        if PostDeployLog.objects.completed().with_errors().exists():
+            for action in PostDeployLog.objects.completed().with_errors():
+                self.stdout.write(f"F: {action.import_name} ({action.message})")
 
-    def do_execute(self, ids):
-        actions = [action for action in PostDeployAction.objects.filter(uuid__in=ids)]
+    def do_execute(self, import_names):
+        actions = []
+        for name in import_names:
+            if PostDeployLog.objects.is_running(name):
+                self.stdout.write("Still running %s" % name)
+            else:
+                actions.append(name)
+
         if len(actions) == 0:
-            self.stdout.write(f"No tasks found for scheduling.")
+            self.stdout.write(f"No actions scheduled.")
             return
 
-        real_ids = [action.uuid for action in actions]
-        PostDeployAction.objects.filter(uuid__in=real_ids).start()
+        action_logs = []
+        for import_name in actions:
+            PostDeployLog.objects.filter(import_name=import_name).delete()
+            action_logs.append(PostDeployLog.objects.register_action(import_name))
+            self.stdout.write(f"Scheduled {import_name}")
 
-        self.stdout.write("Scheduled execute:")
-        for action in actions:
-            self.stdout.write(f"* {action.id}")
-
-        task_id = get_scheduler_manager().schedule(real_ids, self.context_manager.default_parameters())
-        PostDeployAction.objects.filter(uuid__in=real_ids).update(
+        task_id = get_scheduler_manager().schedule(action_logs, self.context_manager.default_parameters())
+        PostDeployLog.objects.filter(import_name__in=actions).update(
             task_id=task_id
         )

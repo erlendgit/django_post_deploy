@@ -30,7 +30,7 @@ class CeleryScheduler(DefaultScheduler):
         except (AssertionError, AttributeError):
             return False
 
-    def schedule(self, action_ids, context_kwargs):
+    def schedule(self, action_logs, context_kwargs):
         from post_deploy.tasks import deploy_task
-        result = deploy_task.delay(action_ids, context_kwargs)
+        result = deploy_task.delay([l.pk for l in action_logs], context_kwargs)
         return result.id

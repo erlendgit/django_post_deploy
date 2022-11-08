@@ -5,7 +5,7 @@ app = CeleryScheduler.get_celery_app()
 
 
 @app.task
-def deploy_task(task_ids, context_parameters):
+def deploy_task(log_record_pks, context_parameters):
     manager = get_context_manager(context_parameters)
     with manager.execute():
-        run_deploy_action(task_ids)
+        run_deploy_action(log_record_pks)
