@@ -17,15 +17,18 @@ def populate_log(apps, schema_editor):
     PostDeployAction = apps.get_model('post_deploy', 'PostDeployAction')
     PostDeployLog = apps.get_model('post_deploy', 'PostDeployLog')
 
+    print(PostDeployAction.objects.all())
+
     for action in PostDeployAction.objects.all():
         if action.completed_at:
-            PostDeployLog.objects.create(
+            new_log = PostDeployLog.objects.create(
                 import_name=library_to_id(action.id),
                 created_at=action.started_at,
                 completed_at=action.completed_at,
                 task_id=action.task_id,
                 message=action.message,
             )
+            print(new_log)
 
 
 class Migration(migrations.Migration):
