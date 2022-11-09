@@ -7,6 +7,10 @@ from post_deploy.local_utils import initialize_actions, get_context_manager, get
 from post_deploy.models import PostDeployLog
 
 
+def strftime(datetime: timezone.datetime):
+    return datetime.astimezone(ltz()).strftime("%Y-%m-%d %H:%M")
+
+
 class Command(BaseCommand):
     help = "Execute post deployment actions."
     _bindings = None
@@ -27,7 +31,8 @@ class Command(BaseCommand):
                             help="Execute all pending actions no matter the value of auto.")
         parser.add_argument('--one', help="Execute one of the actions.")
         parser.add_argument('--once', help="Execute the given action if it is not completed correctly.")
-        parser.add_argument('--skip', const=True, action='store_const', help="Skip all unprocessed tasks.")
+        parser.add_argument('--skip', help="Skip a specific action. It will not be scheduled on --auto or --all.")
+        parser.add_argument('--reset', help="Remove log records for one action.")
 
     def handle(self, *args, **options):
         self.context_manager = get_context_manager(None)
@@ -40,7 +45,7 @@ class Command(BaseCommand):
             PostDeployLog.objects.sync_status()
 
             todo_list = []
-            for todo in ['status', 'todo', 'auto', 'all', 'one', 'once', 'skip']:
+            for todo in ['status', 'todo', 'auto', 'all', 'one', 'once', 'skip', 'reset']:
                 if options.get(todo):
                     todo_list.append(todo)
 
@@ -55,7 +60,10 @@ class Command(BaseCommand):
                 return self.do_todo()
 
             if 'skip' in todo_list:
-                return self.do_skip()
+                return self.do_skip(options['skip'])
+
+            if 'reset' in todo_list:
+                return self.do_reset(options['reset'])
 
             if 'auto' in todo_list:
                 return self.do_execute(PostDeployLog.objects.auto(self._bindings))
@@ -72,12 +80,18 @@ class Command(BaseCommand):
     def do_help(self):
         self.print_help("manage.py", "post_deploy")
 
-    def do_skip(self):
-        for import_name in PostDeployLog.objects.unprocessed(self._bindings):
-            action_log:PostDeployLog = PostDeployLog.objects.register_action(import_name)
-            action_log.started_at = timezone.localtime()
-            action_log.completed_at = timezone.localtime()
-            action_log.save()
+    def do_skip(self, import_name):
+        action_log: PostDeployLog = PostDeployLog.objects.register_action(import_name)
+        action_log.started_at = timezone.localtime()
+        action_log.completed_at = timezone.localtime()
+        action_log.has_error = True
+        action_log.message = "Manually skipped."
+        action_log.save()
+        self.stdout.write("Skip %s from --all and --auto execution mode." % import_name)
+
+    def do_reset(self, import_name):
+        PostDeployLog.objects.filter(import_name=import_name).delete()
+        self.stdout.write("Clear log history for %s" % import_name)
 
     def do_once(self, import_name):
         if not PostDeployLog.objects.is_success(import_name):
@@ -92,18 +106,17 @@ class Command(BaseCommand):
         if PostDeployLog.objects.running().exists():
             self.stdout.write("\nCurrently running actions:")
             for action in PostDeployLog.objects.running():
-                start = action.started_at or action.created_at
-                self.stdout.write(f"* {action.import_name} ({start.astimezone(ltz())})")
+                self.stdout.write(f"* {action.import_name} ({strftime(action.started_at or action.created_at)})")
 
         if PostDeployLog.objects.completed().with_errors().exists():
             self.stdout.write("\nActions that failed:")
             for action in PostDeployLog.objects.with_errors():
-                self.stdout.write(f"* {action.import_name} ({action.completed_at.astimezone(ltz())} {action.message})")
+                self.stdout.write(f"* {action.import_name} ({strftime(action.completed_at)} {action.message})")
 
         if PostDeployLog.objects.completed().order_by('-completed_at').exists():
             self.stdout.write("\nCompleted actions:")
             for action in PostDeployLog.objects.completed().order_by('-completed_at'):
-                self.stdout.write(f"* {action.import_name} ({action.completed_at.astimezone(ltz())})")
+                self.stdout.write(f"* {action.import_name} ({strftime(action.completed_at)})")
 
     def do_todo(self):
         auto_actions = PostDeployLog.objects.auto(self._bindings)
@@ -118,7 +131,7 @@ class Command(BaseCommand):
 
         if PostDeployLog.objects.completed().with_errors().exists():
             for action in PostDeployLog.objects.completed().with_errors():
-                self.stdout.write(f"F: {action.import_name} ({action.message})")
+                self.stdout.write(f"F: {action.import_name} ({action.message} {strftime(action.completed_at)})")
 
     def do_execute(self, import_names):
         actions = []
@@ -134,7 +147,6 @@ class Command(BaseCommand):
 
         action_logs = []
         for import_name in actions:
-            PostDeployLog.objects.filter(import_name=import_name).delete()
             action_logs.append(PostDeployLog.objects.register_action(import_name))
             self.stdout.write(f"Scheduled {import_name}")
 

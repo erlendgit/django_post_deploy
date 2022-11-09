@@ -124,12 +124,18 @@ class TestManagementCommandTestCase(TestCase):
         self.assertEqual(do_execute.call_args.args, (["some.completed_with_error_action"],))
 
     def test_skip(self):
-        self.command.handle(skip=True)
+        self.command.handle(skip='some.auto_action')
+        self.command.handle(skip='some.manual_action')
+        self.command.handle(skip='custom_action')
 
         completed_actions = PostDeployLog.objects.completed().import_names()
         self.assertIn('some.auto_action', completed_actions)
         self.assertIn('some.manual_action', completed_actions)
-        self.assertNotIn('custom_action', completed_actions)
+        self.assertIn('custom_action', completed_actions)
+
+    def test_reset(self):
+        self.command.handle(reset='some.still_running_action')
+        self.assertFalse(PostDeployLog.objects.filter(import_name='some.still_running_action').exists())
 
     @mock.patch('post_deploy.management.commands.deploy.get_scheduler_manager')
     def test_do_execute(self, get_scheduler_manager):

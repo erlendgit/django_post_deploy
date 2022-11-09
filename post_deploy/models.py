@@ -76,6 +76,7 @@ class PostDeployLogQuerySet(models.QuerySet):
         return self.running().filter(import_name=import_name).exists()
 
     def register_action(self, import_name):
+        self.filter(import_name=import_name).delete()
         return self.create(import_name=import_name)
 
     def sync_status(self):

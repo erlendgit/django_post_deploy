@@ -8,26 +8,26 @@ from post_deploy.models import PostDeployLog
 
 class TestLogQueryset(TestCase):
     def setUp(self):
-        self.error_action_record = PostDeployLog.objects.create(
+        self.error_action_record: PostDeployLog = PostDeployLog.objects.create(
             import_name='some.completed_with_error_action',
             started_at=timezone.localtime(),
             completed_at=timezone.localtime(),
             has_error=True,
             message="Error message"
         )
-        self.another_error_record = PostDeployLog.objects.create(
+        self.another_error_record: PostDeployLog = PostDeployLog.objects.create(
             import_name='some.another_completed_with_error_action',
             started_at=timezone.localtime(),
             completed_at=timezone.localtime(),
             has_error=True,
             message="Error message"
         )
-        self.fine_action_record = PostDeployLog.objects.create(
+        self.fine_action_record: PostDeployLog = PostDeployLog.objects.create(
             import_name='some.completed_fine_action',
             started_at=timezone.localtime(),
             completed_at=timezone.localtime(),
         )
-        self.running_action_record = PostDeployLog.objects.create(
+        self.running_action_record: PostDeployLog = PostDeployLog.objects.create(
             import_name='some.running_action'
         )
         self.reference = {
@@ -94,11 +94,14 @@ class TestLogQueryset(TestCase):
 
     def test_register_action(self):
         record: PostDeployLog = PostDeployLog.objects.register_action('some.completed_with_error_action')
-        self.error_action_record.refresh_from_db()
 
         # a new record is created
         self.assertEqual(record.import_name, self.error_action_record.import_name)
         self.assertNotEqual(record.pk, self.error_action_record.pk)
+
+        # the existing one is removed
+        with self.assertRaises(PostDeployLog.DoesNotExist):
+            self.error_action_record.refresh_from_db()
 
     @mock.patch('post_deploy.models.PostDeployLog.sync_status')
     def test_sync_status(self, sync_status):
