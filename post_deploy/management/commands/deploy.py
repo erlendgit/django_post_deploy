@@ -29,10 +29,16 @@ class Command(BaseCommand):
                             help="Execute all pending actions that have auto=True (default setting).")
         parser.add_argument('--all', const=True, action='store_const',
                             help="Execute all pending actions no matter the value of auto.")
-        parser.add_argument('--one', help="Execute one of the actions.")
-        parser.add_argument('--once', help="Execute the given action if it is not completed correctly.")
-        parser.add_argument('--skip', help="Skip a specific action. It will not be scheduled on --auto or --all.")
-        parser.add_argument('--reset', help="Remove log records for one action.")
+        parser.add_argument('--one',
+                            help="Execute one of the actions.")
+        parser.add_argument('--once',
+                            help="Execute the given action if it is not completed correctly.")
+        parser.add_argument('--skip',
+                            help="Skip a specific action. It will not be scheduled on --auto or --all.")
+        parser.add_argument('--reset',
+                            help="Remove log records for one action.")
+        parser.add_argument('--uuids', const=True, action='store_const',
+                            help="List uuids of the actions.")
 
     def handle(self, *args, **options):
         self.context_manager = get_context_manager(None)
@@ -45,7 +51,7 @@ class Command(BaseCommand):
             PostDeployLog.objects.sync_status()
 
             todo_list = []
-            for todo in ['status', 'todo', 'auto', 'all', 'one', 'once', 'skip', 'reset']:
+            for todo in ['status', 'todo', 'auto', 'all', 'one', 'once', 'skip', 'reset', 'uuids']:
                 if options.get(todo):
                     todo_list.append(todo)
 
@@ -58,6 +64,9 @@ class Command(BaseCommand):
 
             if 'todo' in todo_list:
                 return self.do_todo()
+
+            if 'uuids' in todo_list:
+                return self.do_uuids()
 
             if 'skip' in todo_list:
                 return self.do_skip(options['skip'])
@@ -79,6 +88,10 @@ class Command(BaseCommand):
 
     def do_help(self):
         self.print_help("manage.py", "post_deploy")
+
+    def do_uuids(self):
+        for action_log in PostDeployLog.objects.all():
+            self.stdout.write("%s -- %s" % (action_log.pk, action_log.import_name))
 
     def do_skip(self, import_name):
         action_log: PostDeployLog = PostDeployLog.objects.register_action(import_name)

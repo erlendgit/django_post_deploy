@@ -73,6 +73,11 @@ class TestManagementCommandTestCase(TestCase):
         self.command.handle(status=True)
         self.assertEqual(do_status.call_count, 1)
 
+    @mock.patch('post_deploy.management.commands.deploy.Command.do_uuids')
+    def test_uuids(self, do_uuids):
+        self.command.handle(uuids=True)
+        self.assertEqual(do_uuids.call_count, 1)
+
     @mock.patch('post_deploy.management.commands.deploy.Command.do_todo')
     def test_todo(self, do_todo):
         self.command.handle(todo=True)
