@@ -119,7 +119,10 @@ class Command(BaseCommand):
         if PostDeployLog.objects.running().exists():
             self.stdout.write("\nCurrently running actions:")
             for action in PostDeployLog.objects.running():
-                self.stdout.write(f"* {action.import_name} ({strftime(action.started_at or action.created_at)})")
+                if action.started_at:
+                    self.stdout.write(f"* {action.import_name} (started: {strftime(action.started_at)})")
+                else:
+                    self.stdout.write(f"* {action.import_name} (scheduled: {strftime(action.created_at)})")
 
         if PostDeployLog.objects.completed().with_errors().exists():
             self.stdout.write("\nActions that failed:")
@@ -158,12 +161,8 @@ class Command(BaseCommand):
             self.stdout.write(f"No actions scheduled.")
             return
 
-        action_logs = []
         for import_name in actions:
-            action_logs.append(PostDeployLog.objects.register_action(import_name))
+            action_log = PostDeployLog.objects.register_action(import_name)
+            task_id = get_scheduler_manager().schedule([action_log], self.context_manager.default_parameters())
+            PostDeployLog.objects.filter(import_name=import_name).update(task_id=task_id)
             self.stdout.write(f"Scheduled {import_name}")
-
-        task_id = get_scheduler_manager().schedule(action_logs, self.context_manager.default_parameters())
-        PostDeployLog.objects.filter(import_name__in=actions).update(
-            task_id=task_id
-        )
