@@ -112,5 +112,5 @@ class PostDeployLog(models.Model):
         if scheduler.task_ready(str(self.task_id)):
             self.completed_at = timezone.localtime()
             self.has_error = True
-            self.message = "Abnormal termination detected. Please check the logs for details."
+            self.message = "Abnormal termination detected. Task id is %s." % self.task_id
             self.save()
