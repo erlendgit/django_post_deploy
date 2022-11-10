@@ -45,7 +45,7 @@ def this_action_must_be_triggered_manually():
 ```
 
 ```shell
-# This line is added to your deployment automation script
+# This line may be added to your deployment automation script
 python manage.py deploy --auto
 ```
 
