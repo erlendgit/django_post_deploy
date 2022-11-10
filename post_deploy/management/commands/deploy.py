@@ -38,7 +38,7 @@ class Command(BaseCommand):
         parser.add_argument('--reset',
                             help="Remove log records for one action.")
         parser.add_argument('--uuids', const=True, action='store_const',
-                            help="List uuids of the actions.")
+                            help="List uuids of currently running actions.")
 
     def handle(self, *args, **options):
         self.context_manager = get_context_manager(None)
@@ -90,7 +90,7 @@ class Command(BaseCommand):
         self.print_help("manage.py", "post_deploy")
 
     def do_uuids(self):
-        for action_log in PostDeployLog.objects.all():
+        for action_log in PostDeployLog.objects.running():
             self.stdout.write("%s -- %s" % (action_log.pk, action_log.import_name))
 
     def do_skip(self, import_name):
