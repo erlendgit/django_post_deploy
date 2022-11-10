@@ -1,5 +1,5 @@
 import logging
-from inspect import isfunction
+import traceback
 
 import django.db
 from django.apps import apps
@@ -34,7 +34,10 @@ def run_deploy_action(action_log_pks):
             vehicle = import_string(action_log.import_name)
             vehicle()
         except Exception as e:
-            action_log.message = str(e)
+            action_log.message = "%s.%s: %s\n%s" % (e.__class__.__module__,
+                                                    e.__class__.__qualname__,
+                                                    str(e),
+                                                    traceback.format_exc())
             action_log.has_error = True
         finally:
             action_log.completed_at = timezone.localtime()
