@@ -5,10 +5,8 @@ from django.test.testcases import TestCase
 from django.utils import timezone
 
 from post_deploy.models import PostDeployLog
-
 from post_deploy.plugins.scheduler import DefaultScheduler
-
-from django_post_deploy.post_deploy.local_utils import get_context_manager
+from post_deploy.local_utils import get_context_manager
 
 
 class TestManagementCommandTestCase(TestCase):
@@ -159,7 +157,7 @@ class TestManagementCommandTestCase(TestCase):
         ])
 
         # ensure only non-running tasks are scheduled
-        scheduled_tasks = [r.import_name for r in scheduler_manager.schedule.call_args.args[0]]
+        scheduled_tasks = [c.args[0][0].import_name for c in scheduler_manager.schedule.call_args_list]
         self.assertEqual(scheduled_tasks, [
             'some.auto_action',
             'some.manual_action',

@@ -65,6 +65,12 @@ class TestLogQueryset(TestCase):
             'some.completed_with_error_action',
         ])
 
+    def test_without_errors(self):
+        self.assertEqual(PostDeployLog.objects.without_errors().count(), 2)
+        self.assertEqual(PostDeployLog.objects.without_errors().import_names(), [
+            'some.running_action', 'some.completed_fine_action'
+        ])
+
     def test_unprocessed(self):
         self.assertEqual(PostDeployLog.objects.unprocessed(self.reference), [
             'some.other_action',

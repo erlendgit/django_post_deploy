@@ -51,6 +51,9 @@ class PostDeployLogQuerySet(models.QuerySet):
     def with_errors(self):
         return self.filter(has_error=True)
 
+    def without_errors(self):
+        return self.filter(has_error=False)
+
     def unprocessed(self, given):
         all_actions = [key for key in given.keys()]
         processed_actions = {k for k in self.values_list('import_name', flat=True)}

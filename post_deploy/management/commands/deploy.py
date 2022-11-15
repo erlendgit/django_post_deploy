@@ -116,23 +116,17 @@ class Command(BaseCommand):
         return self.do_execute([import_name])
 
     def do_status(self):
-        if PostDeployLog.objects.running().exists():
-            self.stdout.write("\nCurrently running actions:")
-            for action in PostDeployLog.objects.running():
-                if action.started_at:
-                    self.stdout.write(f"* {action.import_name} (started: {strftime(action.started_at)})")
-                else:
-                    self.stdout.write(f"* {action.import_name} (scheduled: {strftime(action.created_at)})")
+        for action in PostDeployLog.objects.running():
+            if action.started_at:
+                self.stdout.write(f"* {action.import_name} (🏃 scheduled-started {strftime(action.started_at)})")
+            else:
+                self.stdout.write(f"* {action.import_name} (🕑 scheduled-waiting {strftime(action.created_at)})")
 
-        if PostDeployLog.objects.completed().with_errors().exists():
-            self.stdout.write("\nActions that failed:")
-            for action in PostDeployLog.objects.with_errors():
-                self.stdout.write(f"* {action.import_name} ({strftime(action.completed_at)} {action.message})")
+        for action in PostDeployLog.objects.with_errors():
+            self.stdout.write(f"* {action.import_name} (❌ completed-failed {strftime(action.completed_at)} {action.message})")
 
-        if PostDeployLog.objects.completed().order_by('-completed_at').exists():
-            self.stdout.write("\nCompleted actions:")
-            for action in PostDeployLog.objects.completed().order_by('-completed_at'):
-                self.stdout.write(f"* {action.import_name} ({strftime(action.completed_at)})")
+        for action in PostDeployLog.objects.completed().without_errors().order_by('-completed_at'):
+            self.stdout.write(f"* {action.import_name} (✅ completed-success {strftime(action.completed_at)})")
 
     def do_todo(self):
         auto_actions = PostDeployLog.objects.auto(self._bindings)
