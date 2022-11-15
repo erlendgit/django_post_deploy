@@ -94,12 +94,7 @@ class Command(BaseCommand):
             self.stdout.write("%s -- %s" % (action_log.pk, action_log.import_name))
 
     def do_skip(self, import_name):
-        action_log: PostDeployLog = PostDeployLog.objects.register_action(import_name)
-        action_log.started_at = timezone.localtime()
-        action_log.completed_at = timezone.localtime()
-        action_log.has_error = True
-        action_log.message = "Manually skipped."
-        action_log.save()
+        PostDeployLog.objects.skip_action(import_name, "Manually skipped.")
         self.stdout.write("Skip %s from --all and --auto execution mode." % import_name)
 
     def do_reset(self, import_name):
@@ -126,7 +121,8 @@ class Command(BaseCommand):
             self.stdout.write(f"* {action.import_name} (❌ completed-failed {strftime(action.completed_at)} {action.message})")
 
         for action in PostDeployLog.objects.completed().without_errors().order_by('-completed_at'):
-            self.stdout.write(f"* {action.import_name} (✅ completed-success {strftime(action.completed_at)})")
+            maybe_message = ' ' + action.message if action.message else ''
+            self.stdout.write(f"* {action.import_name} (✅ completed-success {strftime(action.completed_at)}{maybe_message})")
 
     def do_todo(self):
         auto_actions = PostDeployLog.objects.auto(self._bindings)

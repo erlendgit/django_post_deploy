@@ -109,6 +109,18 @@ class TestLogQueryset(TestCase):
         with self.assertRaises(PostDeployLog.DoesNotExist):
             self.error_action_record.refresh_from_db()
 
+    def test_skip_action(self):
+        new_log = PostDeployLog.objects.skip_action('some.completed_with_error_action', "Test")
+        self.assertEqual(new_log.has_error, False)
+        self.assertEqual(new_log.message, 'Test')
+
+        with self.assertRaises(PostDeployLog.DoesNotExist):
+            self.error_action_record.refresh_from_db()
+
+        new_log = PostDeployLog.objects.skip_action('some.unprocessed_item', "Test2")
+        self.assertEqual(new_log.has_error, False)
+        self.assertEqual(new_log.message, 'Test2')
+
     @mock.patch('post_deploy.models.PostDeployLog.sync_status')
     def test_sync_status(self, sync_status):
         PostDeployLog.objects.sync_status()

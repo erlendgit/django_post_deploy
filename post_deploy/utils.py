@@ -43,3 +43,12 @@ class register_post_deploy():
             "auto": self.auto,
             "description": self.description,
         }
+
+
+def skip_all_tasks(reason):
+    from post_deploy.models import PostDeployLog
+    from post_deploy.local_utils import initialize_actions
+
+    actions = initialize_actions()
+    for import_name in actions.keys():
+        PostDeployLog.objects.skip_action(import_name, reason)

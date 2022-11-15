@@ -86,6 +86,15 @@ class PostDeployLogQuerySet(models.QuerySet):
         for action_log in self.running():
             action_log.sync_status()
 
+    def skip_action(self, import_name, reason):
+        action_log: PostDeployLog = self.register_action(import_name)
+        action_log.started_at = timezone.localtime()
+        action_log.completed_at = timezone.localtime()
+        action_log.has_error = False
+        action_log.message = reason
+        action_log.save()
+        return action_log
+
 
 class PostDeployLog(models.Model):
     class Meta:
