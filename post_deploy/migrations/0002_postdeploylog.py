@@ -6,11 +6,8 @@ import uuid
 
 
 def library_to_id(key):
-    from django.utils.module_loading import import_string
-
     module, method = key.split('.')
     class_path = '.'.join([module, 'post_deploy', method])
-    assert import_string(class_path), "Classpath [%s] is not a function." % class_path
     return class_path
 
 
