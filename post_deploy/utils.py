@@ -2,8 +2,6 @@ from collections import OrderedDict
 from functools import partial, update_wrapper
 from inspect import isfunction
 
-from django.utils.translation import gettext as _
-
 
 class register_post_deploy():
     bindings = OrderedDict()
@@ -57,6 +55,7 @@ def skip_all_tasks(reason):
 
 
 def run_task(import_name):
+    from django.utils.translation import gettext as _
     assert not PostDeployLog.objects.is_running(import_name), _("Task is already running")
 
     action_log = PostDeployLog.objects.register_action(import_name)
