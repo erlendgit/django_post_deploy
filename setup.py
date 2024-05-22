@@ -3,6 +3,7 @@ from distutils.core import setup
 from os.path import exists
 
 from setuptools import find_packages
+
 from post_deploy import VERSION
 
 setup(

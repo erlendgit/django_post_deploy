@@ -4,9 +4,9 @@ from unittest import mock
 from django.test.testcases import TestCase
 from django.utils import timezone
 
+from post_deploy.local_utils import get_context_manager
 from post_deploy.models import PostDeployLog
 from post_deploy.plugins.scheduler import DefaultScheduler
-from post_deploy.local_utils import get_context_manager
 
 
 class TestManagementCommandTestCase(TestCase):
@@ -57,7 +57,8 @@ class TestManagementCommandTestCase(TestCase):
             started_at=timezone.localtime(),
         )
 
-        from post_deploy.management.commands.deploy import Command as DeployCommand
+        from post_deploy.management.commands.deploy import \
+            Command as DeployCommand
         self.command = DeployCommand()
         self.command.stdout = mock.MagicMock()
         self.command.stderr = mock.MagicMock()

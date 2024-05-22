@@ -2,9 +2,11 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 from django.utils.timezone import get_current_timezone as ltz
 
-from post_deploy.local_utils import initialize_actions, get_context_manager, get_scheduler_manager, model_ok
-
+from post_deploy.local_utils import (get_context_manager,
+                                     get_scheduler_manager, initialize_actions,
+                                     model_ok)
 from post_deploy.models import PostDeployLog
+from post_deploy.utils import run_task
 
 
 def strftime(datetime: timezone.datetime):
@@ -152,7 +154,5 @@ class Command(BaseCommand):
             return
 
         for import_name in actions:
-            action_log = PostDeployLog.objects.register_action(import_name)
-            task_id = get_scheduler_manager().schedule([action_log], self.context_manager.default_parameters())
-            PostDeployLog.objects.filter(import_name=import_name).update(task_id=task_id)
+            run_task(import_name)
             self.stdout.write(f"Scheduled {import_name}")

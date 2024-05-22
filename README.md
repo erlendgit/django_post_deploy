@@ -185,11 +185,6 @@ def example_on_how_alter_operation_based_on_schema():
     ...
 ```
 
-## Technical details
-
-* This module provides a model, and therefore require a common relational database to be installed. There are however no relations between multiple models in
-  this module, so it may be possible that it works with a non-relational database too. But it is not tested in non-relational database configurations.
-
 ## License information
 
 django_post_deploy (c) by Erlend ter Maat
