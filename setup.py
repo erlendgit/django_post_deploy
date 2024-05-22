@@ -7,7 +7,6 @@ from setuptools import find_packages
 from post_deploy import VERSION
 
 setup(
-    name='django_post_deploy',
     packages=find_packages(),
     version=VERSION[1:],
     license='cc-by-4.0',

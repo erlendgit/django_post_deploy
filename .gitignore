@@ -3,3 +3,4 @@ __pycache__/
 dist/
 MANIFEST
 django_post_deploy.egg-info/
+.pypirc
