@@ -1,7 +1,6 @@
 from collections import OrderedDict
 from functools import partial, update_wrapper
 from inspect import isfunction
-from post_deploy.models import PostDeployLog
 
 
 class register_post_deploy():
@@ -58,6 +57,7 @@ def skip_all_tasks(reason):
 def run_task(import_name):
     from django.utils.translation import gettext as _
     from post_deploy.local_utils import get_context_manager
+    from post_deploy.models import PostDeployLog
     assert not PostDeployLog.objects.is_running(import_name), _("Task is already running")
 
     context_manager = get_context_manager(None)
