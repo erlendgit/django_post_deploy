@@ -56,8 +56,10 @@ def skip_all_tasks(reason):
 
 def run_task(import_name):
     from django.utils.translation import gettext as _
+    from post_deploy.local_utils import get_context_manager
     assert not PostDeployLog.objects.is_running(import_name), _("Task is already running")
 
+    context_manager = get_context_manager(None)
     action_log = PostDeployLog.objects.register_action(import_name)
-    task_id = get_scheduler_manager().schedule([action_log], self.context_manager.default_parameters())
+    task_id = get_scheduler_manager().schedule([action_log], context_manager.default_parameters())
     PostDeployLog.objects.filter(import_name=import_name).update(task_id=task_id)
