@@ -1,6 +1,7 @@
 from collections import OrderedDict
 from functools import partial, update_wrapper
 from inspect import isfunction
+from post_deploy.models import PostDeployLog
 
 
 class register_post_deploy():
