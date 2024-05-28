@@ -2,6 +2,8 @@ from collections import OrderedDict
 from functools import partial, update_wrapper
 from inspect import isfunction
 
+from post_deploy.local_utils import get_scheduler_manager
+
 
 class register_post_deploy():
     bindings = OrderedDict()

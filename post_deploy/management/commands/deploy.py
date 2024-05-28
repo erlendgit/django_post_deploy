@@ -3,7 +3,7 @@ from django.utils import timezone
 from django.utils.timezone import get_current_timezone as ltz
 
 from post_deploy.local_utils import (get_context_manager,
-                                     get_scheduler_manager, initialize_actions,
+                                     initialize_actions,
                                      model_ok)
 from post_deploy.models import PostDeployLog
 from post_deploy.utils import run_task
