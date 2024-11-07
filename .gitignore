@@ -4,3 +4,4 @@ dist/
 MANIFEST
 django_post_deploy.egg-info/
 .pypirc
+venv/
