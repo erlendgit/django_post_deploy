@@ -27,20 +27,20 @@ def initialize_actions():
 
 def run_deploy_action(action_log_pks):
     for pk in action_log_pks:
-        vehicle = import_string(action_log.import_name)
-
         action_log = PostDeployLog.objects.get(pk=pk)
-        action_log.started_at = timezone.localtime()
-        action_log.save()
-
+        vehicle = import_string(action_log.import_name)
         try:
+            action_log.started_at = timezone.localtime()
+            action_log.save()
 
             vehicle()
         except Exception as e:
-            action_log.message = "%s.%s: %s\n%s" % (e.__class__.__module__,
-                                                    e.__class__.__qualname__,
-                                                    str(e),
-                                                    traceback.format_exc())
+            action_log.message = "%s.%s: %s\n%s" % (
+                e.__class__.__module__,
+                e.__class__.__qualname__,
+                str(e),
+                traceback.format_exc(),
+            )
             action_log.has_error = True
         finally:
             action_log.completed_at = timezone.localtime()
